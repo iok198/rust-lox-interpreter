@@ -16,17 +16,18 @@ impl<'a> Scanner<'a> {
         let mut line = 1;
         let mut iter = self.source.chars().peekable();
         let mut buffer = String::new();
+        let skippable = [' ', '\r', '\t', '\n'];
 
         while let Some(c) = iter.next() {
-            if c == ' ' || c == '\r' || c == '\t' {
-                continue;
-            }
-
             if c == '\n' {
                 line += 1;
+            }
+
+            if skippable.contains(&c) {
                 continue;
             }
 
+            // TODO: check if buffer is empty
             if let Some(token_type) = TokenType::from_char(c) {
                 self.tokens.push(Token::new(token_type, line));
                 continue;
@@ -45,7 +46,7 @@ impl<'a> Scanner<'a> {
             }
 
             if let Some(next) = iter.peek() {
-                if next == &'\r' || next == &'\t' || next == &' ' || next == &'\n' {
+                if skippable.contains(next) {
                     unimplemented!("Return error")
                 }
             }

@@ -7,7 +7,7 @@ fn lines_from_prompt() -> Result<String, io::Error> {
 
     loop {
         print!("> ");
-        let _ = io::stdout().flush();
+        let _ = io::stdout().flush(); // allows input on same line as >
         let mut buffer = String::new();
         io::stdin().read_line(&mut buffer)?;
 
@@ -32,7 +32,7 @@ fn main() -> io::Result<()> {
         }
     };
 
-    println!("{:?}", lines);
+    println!("{lines:?}");
 
     Ok(())
 }

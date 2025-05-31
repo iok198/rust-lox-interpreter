@@ -24,7 +24,7 @@ pub enum TokenType<'a> {
     // Literals
     Identifier(&'a str),
     String(&'a str),
-    Number(&'a str),
+    Number(u32, u32), // nums before and after decimal point
     // Keywords
     And,
     Class,
@@ -136,7 +136,7 @@ impl<'a> std::fmt::Display for TokenType<'a> {
             Self::LessEqual => "<=",
             Self::Identifier(ident) => ident,
             Self::String(s) => s,
-            Self::Number(num) => num,
+            Self::Number(num, dec) => &format!("{num}.{dec}"),
             Self::And => "and",
             Self::Class => "class",
             Self::Else => "else",
@@ -156,6 +156,6 @@ impl<'a> std::fmt::Display for TokenType<'a> {
             Self::Eof => "",
         };
 
-        write!(f, "{}", display)
+        write!(f, "{display}")
     }
 }
