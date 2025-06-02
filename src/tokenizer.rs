@@ -1,4 +1,6 @@
-#[derive(Debug)]
+use core::fmt;
+
+#[derive(Debug, PartialEq, Eq)]
 pub enum TokenType<'a> {
     // Single character tokens
     LeftParen,
@@ -46,49 +48,12 @@ pub enum TokenType<'a> {
 }
 
 impl<'a> TokenType<'a> {
-    pub fn from_char(c: char) -> Option<Self> {
-        match c {
-            '(' => Some(TokenType::LeftParen),
-            ')' => Some(TokenType::RightParen),
-            '{' => Some(TokenType::LeftBrace),
-            '}' => Some(TokenType::RightBrace),
-            ',' => Some(TokenType::Comma),
-            '.' => Some(TokenType::Dot),
-            '-' => Some(TokenType::Minus),
-            '+' => Some(TokenType::Plus),
-            ';' => Some(TokenType::Semicolon),
-            '/' => Some(TokenType::Slash),
-            '*' => Some(TokenType::Star),
-            _ => None,
-        }
-    }
-
-    pub fn from_string(s: &str) -> Option<Self> {
-        match s {
-            "!" => Some(Self::Bang),
-            "!=" => Some(Self::BangEqual),
-            "=" => Some(Self::Equal),
-            "==" => Some(Self::EqualEqual),
-            ">" => Some(Self::Greater),
-            ">=" => Some(Self::GreaterEqual),
-            "<" => Some(Self::Less),
-            "<=" => Some(Self::LessEqual),
-            "and" => Some(Self::And),
-            "class" => Some(Self::Class),
-            "else" => Some(Self::Else),
-            "false" => Some(Self::False),
-            "fun" => Some(Self::Fun),
-            "for" => Some(Self::For),
-            "if" => Some(Self::If),
-            "nil" => Some(Self::Nil),
-            "or" => Some(Self::Or),
-            "print" => Some(Self::Print),
-            "return" => Some(Self::Return),
-            "super" => Some(Self::Super),
-            "this" => Some(Self::This),
-            "true" => Some(Self::True),
-            "var" => Some(Self::Var),
-            "while" => Some(Self::While),
+    pub fn get_with_equals(&self) -> Option<Self> {
+        match self {
+            Self::Bang => Some(Self::BangEqual),
+            Self::Equal => Some(Self::EqualEqual),
+            Self::Greater => Some(Self::GreaterEqual),
+            Self::Less => Some(Self::LessEqual),
             _ => None,
         }
     }
@@ -103,6 +68,50 @@ pub struct Token<'a> {
 impl<'a> Token<'a> {
     pub fn new(token_type: TokenType<'a>, line: u32) -> Self {
         Self { token_type, line }
+    }
+
+    pub fn from_char(c: char) -> Option<TokenType<'a>> {
+        match c {
+            '(' => Some(TokenType::LeftParen),
+            ')' => Some(TokenType::RightParen),
+            '{' => Some(TokenType::LeftBrace),
+            '}' => Some(TokenType::RightBrace),
+            ',' => Some(TokenType::Comma),
+            '.' => Some(TokenType::Dot),
+            '-' => Some(TokenType::Minus),
+            '+' => Some(TokenType::Plus),
+            ';' => Some(TokenType::Semicolon),
+            '/' => Some(TokenType::Slash),
+            '*' => Some(TokenType::Star),
+            // characters that can be appended with =
+            '!' => Some(TokenType::Bang),
+            '=' => Some(TokenType::Equal),
+            '>' => Some(TokenType::Greater),
+            '<' => Some(TokenType::Less),
+            _ => None,
+        }
+    }
+
+    pub fn from_string(s: &str) -> Option<TokenType<'a>> {
+        match s {
+            "and" => Some(TokenType::And),
+            "class" => Some(TokenType::Class),
+            "else" => Some(TokenType::Else),
+            "false" => Some(TokenType::False),
+            "fun" => Some(TokenType::Fun),
+            "for" => Some(TokenType::For),
+            "if" => Some(TokenType::If),
+            "nil" => Some(TokenType::Nil),
+            "or" => Some(TokenType::Or),
+            "print" => Some(TokenType::Print),
+            "return" => Some(TokenType::Return),
+            "super" => Some(TokenType::Super),
+            "this" => Some(TokenType::This),
+            "true" => Some(TokenType::True),
+            "var" => Some(TokenType::Var),
+            "while" => Some(TokenType::While),
+            _ => None,
+        }
     }
 }
 
@@ -157,5 +166,56 @@ impl<'a> std::fmt::Display for TokenType<'a> {
         };
 
         write!(f, "{display}")
+    }
+}
+
+#[derive(Debug)]
+pub enum TokenizerError {
+    UnexpectedCharacter(char, u32),
+    UnterminatedString(u32),
+}
+
+impl fmt::Display for TokenizerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::UnexpectedCharacter(c, line) => {
+                write!(f, "Unexpected character '{c}' on line {line}")
+            }
+            Self::UnterminatedString(line) => write!(f, "Unterminated string on line {line}"),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        Token,
+        TokenType::{self, *},
+    };
+
+    #[test]
+    fn test_get_with_equals() {
+        let get = TokenType::get_with_equals;
+        assert_eq!(get(&Bang), Some(BangEqual));
+        assert_eq!(get(&Equal), Some(EqualEqual));
+        assert_eq!(get(&Greater), Some(GreaterEqual));
+        assert_eq!(get(&Less), Some(LessEqual));
+        assert_eq!(get(&LeftParen), None);
+    }
+
+    #[test]
+    fn test_get_from_char() {
+        let get = Token::from_char;
+        assert_eq!(get('('), Some(LeftParen));
+        assert_eq!(get(';'), Some(Semicolon));
+        assert_eq!(get('%'), None);
+    }
+
+    #[test]
+    fn test_get_from_string() {
+        let get = Token::from_string;
+        assert_eq!(get("and"), Some(And));
+        assert_eq!(get("or"), Some(Or));
+        assert_eq!(get("owo"), None);
     }
 }

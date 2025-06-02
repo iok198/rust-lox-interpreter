@@ -1,4 +1,5 @@
-use crate::tokenizer::*;
+use crate::tokenizer::{Token, TokenType, TokenizerError};
+
 pub struct Scanner<'a> {
     source: String,
     tokens: Vec<Token<'a>>,
@@ -12,7 +13,24 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn scan_tokens(mut self) -> Vec<Token<'a>> {
+    fn consume_until<T, F>(iter: &mut T, callback: F) -> String
+    where
+        T: Iterator<Item = char>,
+        F: Fn(&char) -> bool,
+    {
+        let mut buffer = String::new();
+
+        for c in iter {
+            if callback(&c) {
+                break;
+            }
+
+            buffer.push(c);
+        }
+        buffer
+    }
+
+    fn scan_tokens(mut self) -> Result<Vec<Token<'a>>, TokenizerError> {
         let mut line = 1;
         let mut iter = self.source.chars().peekable();
         let mut buffer = String::new();
@@ -27,31 +45,29 @@ impl<'a> Scanner<'a> {
                 continue;
             }
 
-            // TODO: check if buffer is empty
-            if let Some(token_type) = TokenType::from_char(c) {
-                self.tokens.push(Token::new(token_type, line));
-                continue;
-            }
-
-            if let Some(token_type) = TokenType::from_string(&buffer) {
-                self.tokens.push(Token::new(token_type, line));
-                buffer = String::new();
-                continue;
-            }
-
-            buffer.push(c);
-
-            if TokenType::from_string(&buffer).is_some() {
-                continue;
-            }
-
-            if let Some(next) = iter.peek() {
-                if skippable.contains(next) {
-                    unimplemented!("Return error")
+            let token_type = match (Token::from_char(c), c.is_alphabetic(), c.is_numeric()) {
+                (Some(current), _, _) => {
+                    if let Some(next) = iter.peek() {
+                        if *next == '=' {
+                            current.get_with_equals().unwrap_or(current)
+                        } else {
+                            current
+                        }
+                    } else {
+                        current
+                    }
                 }
-            }
+                (None, true, _) => {
+                    let identifer = Self::consume_until(&mut iter, |ch| !ch.is_alphabetic());
+                    TokenType::Identifier(identifer.as_str())
+                },
+                (None, _, true) => todo!("For numbers"),
+                _ => return Err(TokenizerError::UnexpectedCharacter(c, line)),
+            };
+
+            self.tokens.push(Token::new(token_type, line));
         }
         self.tokens.push(Token::new(TokenType::Eof, line));
-        self.tokens
+        Ok(self.tokens)
     }
 }
