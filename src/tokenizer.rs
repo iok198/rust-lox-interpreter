@@ -1,7 +1,7 @@
 use core::fmt;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum TokenType<'a> {
+pub enum TokenType {
     // Single character tokens
     LeftParen,
     RightParen,
@@ -24,8 +24,8 @@ pub enum TokenType<'a> {
     Less,
     LessEqual,
     // Literals
-    Identifier(&'a str),
-    String(&'a str),
+    Identifier(String),
+    String(String),
     Number(u32, u32), // nums before and after decimal point
     // Keywords
     And,
@@ -47,7 +47,7 @@ pub enum TokenType<'a> {
     Eof,
 }
 
-impl<'a> TokenType<'a> {
+impl TokenType {
     pub fn get_with_equals(&self) -> Option<Self> {
         match self {
             Self::Bang => Some(Self::BangEqual),
@@ -59,69 +59,7 @@ impl<'a> TokenType<'a> {
     }
 }
 
-#[derive(Debug)]
-pub struct Token<'a> {
-    token_type: TokenType<'a>,
-    line: u32,
-}
-
-impl<'a> Token<'a> {
-    pub fn new(token_type: TokenType<'a>, line: u32) -> Self {
-        Self { token_type, line }
-    }
-
-    pub fn from_char(c: char) -> Option<TokenType<'a>> {
-        match c {
-            '(' => Some(TokenType::LeftParen),
-            ')' => Some(TokenType::RightParen),
-            '{' => Some(TokenType::LeftBrace),
-            '}' => Some(TokenType::RightBrace),
-            ',' => Some(TokenType::Comma),
-            '.' => Some(TokenType::Dot),
-            '-' => Some(TokenType::Minus),
-            '+' => Some(TokenType::Plus),
-            ';' => Some(TokenType::Semicolon),
-            '/' => Some(TokenType::Slash),
-            '*' => Some(TokenType::Star),
-            // characters that can be appended with =
-            '!' => Some(TokenType::Bang),
-            '=' => Some(TokenType::Equal),
-            '>' => Some(TokenType::Greater),
-            '<' => Some(TokenType::Less),
-            _ => None,
-        }
-    }
-
-    pub fn from_string(s: &str) -> Option<TokenType<'a>> {
-        match s {
-            "and" => Some(TokenType::And),
-            "class" => Some(TokenType::Class),
-            "else" => Some(TokenType::Else),
-            "false" => Some(TokenType::False),
-            "fun" => Some(TokenType::Fun),
-            "for" => Some(TokenType::For),
-            "if" => Some(TokenType::If),
-            "nil" => Some(TokenType::Nil),
-            "or" => Some(TokenType::Or),
-            "print" => Some(TokenType::Print),
-            "return" => Some(TokenType::Return),
-            "super" => Some(TokenType::Super),
-            "this" => Some(TokenType::This),
-            "true" => Some(TokenType::True),
-            "var" => Some(TokenType::Var),
-            "while" => Some(TokenType::While),
-            _ => None,
-        }
-    }
-}
-
-impl<'a> std::fmt::Display for Token<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}", self.token_type, self.line)
-    }
-}
-
-impl<'a> std::fmt::Display for TokenType<'a> {
+impl std::fmt::Display for TokenType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let display = match self {
             Self::LeftParen => "(",
@@ -168,6 +106,69 @@ impl<'a> std::fmt::Display for TokenType<'a> {
         write!(f, "{display}")
     }
 }
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Token {
+    pub token_type: TokenType,
+    pub line: u32,
+}
+
+impl Token {
+    pub fn new(token_type: TokenType, line: u32) -> Self {
+        Self { token_type, line }
+    }
+
+    pub fn from_char(c: char) -> Option<TokenType> {
+        match c {
+            '(' => Some(TokenType::LeftParen),
+            ')' => Some(TokenType::RightParen),
+            '{' => Some(TokenType::LeftBrace),
+            '}' => Some(TokenType::RightBrace),
+            ',' => Some(TokenType::Comma),
+            '.' => Some(TokenType::Dot),
+            '-' => Some(TokenType::Minus),
+            '+' => Some(TokenType::Plus),
+            ';' => Some(TokenType::Semicolon),
+            '/' => Some(TokenType::Slash),
+            '*' => Some(TokenType::Star),
+            // characters that can be appended with =
+            '!' => Some(TokenType::Bang),
+            '=' => Some(TokenType::Equal),
+            '>' => Some(TokenType::Greater),
+            '<' => Some(TokenType::Less),
+            _ => None,
+        }
+    }
+
+    pub fn from_string(s: &str) -> Option<TokenType> {
+        match s {
+            "and" => Some(TokenType::And),
+            "class" => Some(TokenType::Class),
+            "else" => Some(TokenType::Else),
+            "false" => Some(TokenType::False),
+            "fun" => Some(TokenType::Fun),
+            "for" => Some(TokenType::For),
+            "if" => Some(TokenType::If),
+            "nil" => Some(TokenType::Nil),
+            "or" => Some(TokenType::Or),
+            "print" => Some(TokenType::Print),
+            "return" => Some(TokenType::Return),
+            "super" => Some(TokenType::Super),
+            "this" => Some(TokenType::This),
+            "true" => Some(TokenType::True),
+            "var" => Some(TokenType::Var),
+            "while" => Some(TokenType::While),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.token_type, self.line)
+    }
+}
+
 
 #[derive(Debug)]
 pub enum TokenizerError {
