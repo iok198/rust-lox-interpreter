@@ -79,6 +79,7 @@ impl Scanner {
 
             if current == TokenType::Slash && *next == '/' {
                 let _ = Self::consume_until(&mut iter, |c| *c == '\n');
+                line += 1;
                 continue;
             }
 
@@ -153,5 +154,19 @@ mod tests {
         let scanner = Scanner::new("/()".to_owned());
         let tokens = get_types(scanner.scan_tokens());
         assert_eq!(tokens, vec![Slash, LeftParen, RightParen, Eof]);
+    }
+
+    #[test]
+    fn test_multi_line_errors() {
+        use TokenizerError::*;
+        let scanner = Scanner::new("# (// comment\n)  @".to_owned());
+        let (tokens, errors) = scanner.scan_tokens();
+        let Some(errors) = errors else {
+            panic!("Didn't give error for invalid character");
+        };
+        let tokens: Vec<TokenType> = tokens.into_iter().map(|t| t.token_type).collect();
+
+        assert_eq!(errors, vec![UnexpectedCharacter('#', 1), UnexpectedCharacter('@', 2)]);
+        assert_eq!(tokens, vec![LeftParen, RightParen, Eof]);
     }
 }
