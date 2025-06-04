@@ -26,10 +26,22 @@ fn main() -> io::Result<()> {
     let lines = match &args[..] {
         [_] => lines_from_prompt()?,
         [_, file] => fs::read_to_string(file)?,
+        [_, command, file] => {
+            if command != "tokenize" { return Ok(()); }
+            let contents = fs::read_to_string(file).unwrap_or(String::new());
+
+            if !contents.is_empty() {
+                panic!("Scanner not implemented");
+            } else {
+                println!("EOF Null");
+            }
+
+            String::new()
+        }
         _ => {
             eprintln!("Usage: jlox [script]");
             process::exit(64); // code 64 = EX_USAGE (command was used incorrectly)
-        }
+        },
     };
 
     println!("{lines:?}");
