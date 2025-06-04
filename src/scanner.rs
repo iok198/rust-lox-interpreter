@@ -64,12 +64,15 @@ impl Scanner {
                 continue;
             }
 
-            let current = match Token::from_char(c).ok_or(TokenizerError::UnexpectedCharacter(c, line)) {
-                Ok(token) => token,
-                Err(e) => {
-                    errors.push(e);
-                    continue;
-                }
+            if c == '"' {
+                let s = Self::consume_until(&mut iter, |c| *c == '"');
+                self.tokens.push(Token::new(TokenType::String(s), line));
+                continue;
+            }
+
+            let Some(current) = Token::from_char(c) else {
+                errors.push(TokenizerError::UnexpectedCharacter(c, line));
+                continue;
             };
 
             let Some(next) = iter.peek() else {
@@ -98,8 +101,8 @@ impl Scanner {
             self.tokens.push(Token::new(token_type, line));
         }
 
-        let errors = if errors.is_empty() { None } else { Some(errors) };
         self.tokens.push(Token::new(TokenType::Eof, line));
+        let errors = if errors.is_empty() { None } else { Some(errors) };
         (self.tokens, errors)
     }
 }
@@ -160,13 +163,27 @@ mod tests {
     fn test_multi_line_errors() {
         use TokenizerError::*;
         let scanner = Scanner::new("# (// comment\n)  @".to_owned());
-        let (tokens, errors) = scanner.scan_tokens();
-        let Some(errors) = errors else {
+        let (tokens, Some(errors)) = scanner.scan_tokens() else {
             panic!("Didn't give error for invalid character");
         };
         let tokens: Vec<TokenType> = tokens.into_iter().map(|t| t.token_type).collect();
 
         assert_eq!(errors, vec![UnexpectedCharacter('#', 1), UnexpectedCharacter('@', 2)]);
         assert_eq!(tokens, vec![LeftParen, RightParen, Eof]);
+    }
+
+    #[test]
+    fn test_strings() {
+        use TokenizerError::*;
+        let scanner = Scanner::new("\"foo baz\"".to_owned());
+        let tokens = get_types(scanner.scan_tokens());
+        assert_eq!(tokens, vec![String("foo baz".to_string()), Eof]);
+        let scanner = Scanner::new("\"bar ".to_owned());
+        let (tokens, Some(errors)) = scanner.scan_tokens() else {
+            panic!("Didn't give error for invalid character");
+        };
+        let tokens: Vec<TokenType> = tokens.into_iter().map(|token| token.token_type).collect();
+        assert_eq!(errors, vec![UnterminatedString(1)]);
+        assert_eq!(tokens, vec![Eof]);
     }
 }
