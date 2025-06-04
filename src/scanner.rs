@@ -77,6 +77,11 @@ impl Scanner {
                 continue;
             };
 
+            if current == TokenType::Slash && *next == '/' {
+                let _ = Self::consume_until(&mut iter, |c| *c == '\n');
+                continue;
+            }
+
             if *next != '=' { 
                 self.tokens.push(Token::new(current, line));
                 continue;
@@ -103,27 +108,22 @@ mod tests {
     use super::{Scanner, Token, TokenizerError};
     use super::TokenType::{self, *};
 
-    fn get_types(tokens: Vec<Token>) -> Vec<TokenType> {
+    fn get_types((tokens, errors): (Vec<Token>, Option<Vec<TokenizerError>>)) -> Vec<TokenType> {
+        assert!(errors.is_none());
         tokens.into_iter().map(|token| token.token_type).collect()
     }
 
     #[test]
     fn test_single_chars() {
         let scanner = Scanner::new("()".to_owned());
-        let (tokens, errors) = scanner.scan_tokens();
-        let tokens = get_types(tokens);
+        let tokens = get_types(scanner.scan_tokens());
         assert_eq!(tokens, vec![LeftParen, RightParen, Eof]);
-        assert_eq!(errors, None);
         let scanner = Scanner::new("{}".to_owned());
-        let (tokens, errors) = scanner.scan_tokens();
-        let tokens = get_types(tokens);
+        let tokens = get_types(scanner.scan_tokens());
         assert_eq!(tokens, vec![LeftBrace, RightBrace, Eof]);
-        assert_eq!(errors, None);
         let scanner = Scanner::new(",.-+;/*".to_owned());
-        let (tokens, errors) = scanner.scan_tokens();
-        let tokens = get_types(tokens);
+        let tokens = get_types(scanner.scan_tokens());
         assert_eq!(tokens, vec![Comma, Dot, Minus, Plus, Semicolon, Slash, Star, Eof]);
-        assert_eq!(errors, None);
     }
 
     #[test]
@@ -141,9 +141,17 @@ mod tests {
     #[test]
     fn test_double_equals() {
         let scanner = Scanner::new("={===}".to_owned());
-        let (tokens, errors) = scanner.scan_tokens();
-        assert!(errors.is_none());
-        let tokens = get_types(tokens);
+        let tokens = get_types(scanner.scan_tokens());
         assert_eq!(tokens, vec![Equal, LeftBrace, EqualEqual, Equal, RightBrace, Eof]);
+    }
+
+    #[test]
+    fn test_slashes_comments() {
+        let scanner = Scanner::new("()// Comment".to_owned());
+        let tokens = get_types(scanner.scan_tokens());
+        assert_eq!(tokens, vec![LeftParen, RightParen, Eof]);
+        let scanner = Scanner::new("/()".to_owned());
+        let tokens = get_types(scanner.scan_tokens());
+        assert_eq!(tokens, vec![Slash, LeftParen, RightParen, Eof]);
     }
 }
