@@ -180,7 +180,7 @@ impl fmt::Display for TokenizerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::UnexpectedCharacter(c, line) => {
-                write!(f, "Unexpected character '{c}' on line {line}")
+                write!(f, "[line {line}] Error: Unexpected character: '{c}'")
             }
             Self::UnterminatedString(line) => write!(f, "Unterminated string on line {line}"),
         }

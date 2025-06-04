@@ -30,9 +30,10 @@ impl Scanner {
         buffer
     }
 
-    pub fn scan_tokens(mut self) -> Result<Vec<Token>, TokenizerError> {
+    pub fn scan_tokens(mut self) -> (Vec<Token>, Option<Vec<TokenizerError>>) {
         let mut line = 1;
         let mut iter = self.source.chars().peekable();
+        let mut errors: Vec<TokenizerError> = Vec::new();
         let skippable = [' ', '\r', '\t', '\n'];
 
         while let Some(c) = iter.next() {
@@ -63,7 +64,14 @@ impl Scanner {
                 continue;
             }
 
-            let current = Token::from_char(c).ok_or(TokenizerError::UnexpectedCharacter(c, line))?;
+            let current = match Token::from_char(c).ok_or(TokenizerError::UnexpectedCharacter(c, line)) {
+                Ok(token) => token,
+                Err(e) => {
+                    errors.push(e);
+                    continue;
+                }
+            };
+
             let Some(next) = iter.peek() else {
                 self.tokens.push(Token::new(current, line));
                 continue;
@@ -76,8 +84,13 @@ impl Scanner {
 
             self.tokens.push(Token::new(current.get_with_equals().unwrap_or(current), line));
         }
+
+        let errors = match errors.is_empty() {
+            true => None,
+            false => Some(errors)
+        };
         self.tokens.push(Token::new(TokenType::Eof, line));
-        Ok(self.tokens)
+        (self.tokens, errors)
     }
 }
 
@@ -93,24 +106,32 @@ mod tests {
     #[test]
     fn test_single_chars() {
         let scanner = Scanner::new("()".to_owned());
-        let tokens = get_types(scanner.scan_tokens().unwrap());
+        let (tokens, errors) = scanner.scan_tokens();
+        let tokens = get_types(tokens);
         assert_eq!(tokens, vec![LeftParen, RightParen, Eof]);
+        assert_eq!(errors, None);
         let scanner = Scanner::new("{}".to_owned());
-        let tokens = get_types(scanner.scan_tokens().unwrap());
+        let (tokens, errors) = scanner.scan_tokens();
+        let tokens = get_types(tokens);
         assert_eq!(tokens, vec![LeftBrace, RightBrace, Eof]);
+        assert_eq!(errors, None);
         let scanner = Scanner::new(",.-+;/*".to_owned());
-        let tokens = get_types(scanner.scan_tokens().unwrap());
+        let (tokens, errors) = scanner.scan_tokens();
+        let tokens = get_types(tokens);
         assert_eq!(tokens, vec![Comma, Dot, Minus, Plus, Semicolon, Slash, Star, Eof]);
+        assert_eq!(errors, None);
     }
 
     #[test]
     fn test_invalid_char() {
         let scanner = Scanner::new("@".to_owned());
+        let (_, errors) = scanner.scan_tokens();
 
-        let Err(err) = scanner.scan_tokens() else {
+        if let Some(error) = errors {
+            assert_eq!(error[0], TokenizerError::UnexpectedCharacter('@', 1));
+        } else {
             panic!("Didn't give an error for an invalid character");
-        };
+        }
 
-        assert_eq!(err, TokenizerError::UnexpectedCharacter('@', 1));
     }
 }
