@@ -23,7 +23,7 @@ fn lines_from_prompt() -> Result<String, io::Error> {
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
-    let lines = match &args[..] {
+    match &args[..] {
         [_] => lines_from_prompt()?,
         // [_, file] => fs::read_to_string(file)?,
         [_, command, file] => {
@@ -45,8 +45,6 @@ fn main() -> io::Result<()> {
             String::new()
         },
     };
-
-    // println!("{lines:?}");
 
     Ok(())
 }
