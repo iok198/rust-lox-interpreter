@@ -170,7 +170,7 @@ impl std::fmt::Display for Token {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum TokenizerError {
     UnexpectedCharacter(char, u32),
     UnterminatedString(u32),

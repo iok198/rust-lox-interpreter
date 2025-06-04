@@ -83,7 +83,7 @@ impl Scanner {
 
 #[cfg(test)]
 mod tests {
-    use super::{Scanner, Token};
+    use super::{Scanner, Token, TokenizerError};
     use super::TokenType::{self, *};
 
     fn get_types(tokens: Vec<Token>) -> Vec<TokenType> {
@@ -101,5 +101,16 @@ mod tests {
         let scanner = Scanner::new(",.-+;/*".to_owned());
         let tokens = get_types(scanner.scan_tokens().unwrap());
         assert_eq!(tokens, vec![Comma, Dot, Minus, Plus, Semicolon, Slash, Star, Eof]);
+    }
+
+    #[test]
+    fn test_invalid_char() {
+        let scanner = Scanner::new("@".to_owned());
+
+        let Err(err) = scanner.scan_tokens() else {
+            panic!("Didn't give an error for an invalid character");
+        };
+
+        assert_eq!(err, TokenizerError::UnexpectedCharacter('@', 1));
     }
 }
