@@ -1,6 +1,8 @@
 use std::io::{self, Write};
-use std::process;
-use std::{env, fs};
+use std::{env, fs, fmt};
+
+use rust_lox_interpreter::tokenizer::Token;
+use rust_lox_interpreter::scanner::Scanner;
 
 fn lines_from_prompt() -> Result<String, io::Error> {
     let mut commands = String::new();
@@ -21,6 +23,26 @@ fn lines_from_prompt() -> Result<String, io::Error> {
     Ok(commands)
 }
 
+// goal: LEFT_PAREN ( null
+fn format_tokens(tokens: Vec<Token>) {
+    for token in tokens {
+        let mut name = String::new();
+        let mut result = String::new();
+        let _ = fmt::write(&mut name, format_args!("{:?}", token.token_type));
+
+        for (i, c) in name.char_indices() {
+            match c.is_lowercase() {
+                true => result.push_str(&c.to_uppercase().to_string()),
+                false => {
+                    if i != 0 {result.push('_');}
+                    result.push(c);
+                }
+            }
+        }
+        println!("{result} {} null", token.token_type);
+    }
+}
+
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
     match &args[..] {
@@ -31,7 +53,9 @@ fn main() -> io::Result<()> {
             let contents = fs::read_to_string(file).unwrap_or(String::new());
 
             if !contents.is_empty() {
-                panic!("Scanner not implemented");
+                let scanner = Scanner::new(contents);
+                let Ok(tokens) = scanner.scan_tokens() else { panic!()};
+                format_tokens(tokens);
             } else {
                 println!("EOF  null");
             }

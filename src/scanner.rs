@@ -6,7 +6,7 @@ pub struct Scanner {
 }
 
 impl Scanner {
-    fn new(source: String) -> Self {
+    pub fn new(source: String) -> Self {
         Self {
             source,
             tokens: vec![],
@@ -30,7 +30,7 @@ impl Scanner {
         buffer
     }
 
-    fn scan_tokens(mut self) -> Result<Vec<Token>, TokenizerError> {
+    pub fn scan_tokens(mut self) -> Result<Vec<Token>, TokenizerError> {
         let mut line = 1;
         let mut iter = self.source.chars().peekable();
         let skippable = [' ', '\r', '\t', '\n'];
