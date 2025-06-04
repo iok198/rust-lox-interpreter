@@ -33,7 +33,7 @@ fn main() -> io::Result<()> {
             if !contents.is_empty() {
                 panic!("Scanner not implemented");
             } else {
-                println!("EOF Null");
+                println!("EOF  null");
             }
 
             String::new()
