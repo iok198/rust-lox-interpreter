@@ -82,13 +82,17 @@ impl Scanner {
                 continue;
             }
 
-            self.tokens.push(Token::new(current.get_with_equals().unwrap_or(current), line));
+            let token_type = match current.get_with_equals() {
+                Some(token) => {
+                    iter.next();
+                    token
+                }
+                None => current
+            };
+            self.tokens.push(Token::new(token_type, line));
         }
 
-        let errors = match errors.is_empty() {
-            true => None,
-            false => Some(errors)
-        };
+        let errors = if errors.is_empty() { None } else { Some(errors) };
         self.tokens.push(Token::new(TokenType::Eof, line));
         (self.tokens, errors)
     }
@@ -132,6 +136,14 @@ mod tests {
         } else {
             panic!("Didn't give an error for an invalid character");
         }
+    }
 
+    #[test]
+    fn test_double_equals() {
+        let scanner = Scanner::new("={===}".to_owned());
+        let (tokens, errors) = scanner.scan_tokens();
+        assert!(errors.is_none());
+        let tokens = get_types(tokens);
+        assert_eq!(tokens, vec![Equal, LeftBrace, EqualEqual, Equal, RightBrace, Eof]);
     }
 }

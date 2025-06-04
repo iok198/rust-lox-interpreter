@@ -24,18 +24,17 @@ fn lines_from_prompt() -> Result<String, io::Error> {
 }
 
 // goal: LEFT_PAREN ( null
-fn format_token(token: Token) -> String {
+fn format_token(token: &Token) -> String {
     let mut name = String::new();
     let mut result = String::new();
     let _ = fmt::write(&mut name, format_args!("{:?}", token.token_type));
 
     for (i, c) in name.char_indices() {
-        match c.is_lowercase() {
-            true => result.push_str(&c.to_uppercase().to_string()),
-            false => {
-                if i != 0 {result.push('_');}
-                result.push(c);
-            }
+        if c.is_lowercase() {
+            result.push_str(&c.to_uppercase().to_string());
+        } else {
+            if i != 0 {result.push('_');}
+            result.push(c);
         }
     }
 
@@ -53,7 +52,7 @@ fn main() -> io::Result<()> {
             let (tokens, errors) = scanner.scan_tokens();
 
             for token in tokens {
-                println!("{}", format_token(token));
+                println!("{}", format_token(&token));
             }
 
             if let Some(errors) = errors {
